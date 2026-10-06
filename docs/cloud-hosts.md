@@ -54,6 +54,8 @@ connection setup does.
 | `bedrock-anthropic:anthropic.<model>` | Anthropic Messages (Bedrock, Opus 4.7+) | `AWS_REGION` | `AWS_BEARER_TOKEN_BEDROCK` or the AWS chain (SigV4) |
 | `bedrock-chat:<model id>` | OpenAI Chat Completions (Bedrock runtime; versioned ids) | `AWS_REGION` | same |
 | `bedrock-mantle-chat:<model id>` | OpenAI Chat Completions (Bedrock mantle; un-versioned ids; `list_models()` works) | `AWS_REGION` | same |
+| `bedrock-responses:<profile id>` | OpenAI Responses (Bedrock runtime, `/openai/v1`) | explicit AWS source region | AWS chain (SigV4); bearer serialization only, not live-verified on this root |
+| `bedrock-mantle-responses:<model id>` | OpenAI Responses (Bedrock mantle, `/openai/v1`) | explicit AWS source region | AWS chain (SigV4); bearer serialization only, not live-verified on this root |
 | `vertex:<model>` | Gemini | a project: `GOOGLE_CLOUD_PROJECT`, else gcloud's, the credential file's or the metadata server's (`GOOGLE_CLOUD_LOCATION`, default `global`) | the Google chain, or an explicit Vertex API key |
 | `vertex-anthropic:<model>` | Anthropic Messages (rawPredict) | same | the Google chain (Claude on Vertex takes no API keys) |
 | `vertex-express:<model>` | Gemini | nothing | `GOOGLE_API_KEY` |
@@ -65,6 +67,92 @@ model Azure could deploy there), not the deployments you can call. `region`
 and `resource` have no default: a wrong-region default is a residency bug,
 so lm15 raises `NotConfiguredError` naming the variable (and, on Azure,
 the endpoint variable that makes `resource` unnecessary).
+
+## Bedrock Responses: pick the door explicitly
+
+The two Responses registrations bind `OpenAILM` / `AsyncOpenAILM`; they do
+not implement another AWS SDK or guess a host from the model. Normal AWS
+profile/region configuration and `provider:model` are sufficient:
+
+```bash
+AWS_PROFILE=your-profile AWS_REGION=us-west-2 python example.py
+```
+
+```python
+from lm15 import Config, LMRouter, Message, Reasoning, Request, RouterConfig
+
+with LMRouter(RouterConfig(
+    credentials={"bedrock-mantle-responses": "cli"},
+)) as router:
+    response = router.complete(Request(
+        model="bedrock-mantle-responses:google.gemma-4-31b",
+        messages=(Message.user("What is 2 + 2?"),),
+        config=Config(max_tokens=256, reasoning=Reasoning(effort="low"), store=False),
+    ))
+    print(response.text)
+```
+
+No caller-defined provider, access policy, host descriptor, compatibility
+object, or standard endpoint URL is required. The async router uses the
+same provider IDs and configuration.
+
+`bedrock-responses:us.openai.gpt-6-astra` instead selects
+`https://bedrock-runtime.{source-region}.amazonaws.com/openai/v1/responses`,
+signed with service `bedrock`. Mantle uses
+`https://bedrock-mantle.{source-region}.api.aws/openai/v1/responses` and
+service `bedrock-mantle`. Both reuse the AWS chain, named identities and
+endpoint overrides above; neither chooses a default AWS region or falls
+back to the other door or OpenAI.
+
+### Evidence and model/profile eligibility
+
+The following model IDs and roots are documented by AWS. Companion
+request/response/SSE evidence is prepared locally but is not yet published
+or pinned; this draft is not a completed contract-compliance claim.
+Grok receipts are withheld pending publication clearance. Its IDs are used
+here only for documented eligibility and opaque serialization, not a new
+receipted-support claim.
+
+| Door | AWS-documented model/profile examples |
+| --- | --- |
+| Runtime Responses | `us.openai.gpt-6-astra`, `us.xai.grok-4.6` |
+| Mantle Responses | `google.gemma-4-31b`, `openai.gpt-6-astra`, `xai.grok-4.6` |
+
+The [GPT-6 Astra](https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-openai-gpt-6-astra.html)
+and [Grok 4.6](https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-xai-grok-4-6.html)
+model cards document `us.` and `global.` profiles. Those inference profiles
+are a **Runtime** concept; Mantle uses the un-prefixed model IDs shown in its
+model cards. Tests of profile-style IDs or ARNs on Mantle exercise opaque
+serialization only, not Mantle profile routing or availability. The global
+Runtime routes remain
+**documentation-only, not live-tested here**. Do not fabricate `eu.` or
+other profiles for these models. Serialization tests pass arbitrary
+`global.`, `us.`, `eu.`, `au.`, `jp.`, other prefixes and profile ARNs
+unchanged; that proves opaque transport, not availability. Application
+inference-profile ARN serialization is likewise not a support claim:
+[AWS Runtime Responses guidance](https://docs.aws.amazon.com/bedrock/latest/userguide/inference-responses-api.html)
+states that application inference profiles are not supported. A model's
+supported native runtime APIs do not imply Responses compatibility (for
+example, Claude's geographic profiles).
+
+Global/geographic routing scope belongs to the **model ID**, not a new
+global hostname. Keep the source-region host/signature regional. Never
+replace a geographic ID with `global.` automatically: global inference
+can cross data-residency boundaries. Select an eligible model/API/source
+region using the [AWS model cards and cross-Region guide](https://docs.aws.amazon.com/bedrock/latest/userguide/cross-region-inference.html).
+
+This binding targets basic completion/streaming. Tools, multimodal input,
+structured output, state/background operations and bearer authentication on
+these roots are not live-verified claims in this draft. No model listing or
+auxiliary endpoint is advertised. `store=False` disables conversation storage;
+AWS/model-provider abuse monitoring may still retain inputs/outputs under
+their service terms. Select reasoning and output budgets using each model's
+API documentation; those settings are not a binding change.
+
+Existing `bedrock-chat`, `bedrock-mantle-chat` on `/v1`, and
+`bedrock-anthropic` are unchanged. Mantle `/openai/v1` Chat needs a separately
+agreed public name (PR 2). Native Converse and the separate
+`response.incomplete` fix are not part of these registrations.
 
 ## Day one: the laptop
 
@@ -494,8 +582,9 @@ A plain string that is a JWT is read as a bearer token, not an API key
 (AUTH-2, amended 2026-09-19). The wrong kind for a door fails at
 construction.
 
-A Bedrock short-term API key (`AWS_BEARER_TOKEN_BEDROCK`) works on both
-Bedrock doors (live 2026-09-04 on `bedrock-chat`). lm15 does not mint
+A Bedrock short-term API key (`AWS_BEARER_TOKEN_BEDROCK`) was live-verified
+on `bedrock-chat` on 2026-09-04. Bearer coverage on the new Responses roots
+is serialization-only, not a live authentication claim. lm15 does not mint
 one: with AWS credentials it signs each request directly, which is what
 the key would have done for you. Mint one only for a tool that speaks
 bearer only (AWS's `aws-bedrock-token-generator`, or

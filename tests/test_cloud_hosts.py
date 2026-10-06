@@ -351,18 +351,18 @@ class TestChains:
 class TestRegistry:
     def test_hosted_entries_one_wire_each(self):
         hosted = {k: v for k, v in PROVIDERS.items() if v.hosted}
-        assert set(hosted) == {"azure", "azure-chat", "azure-anthropic", "aws-anthropic", "bedrock-anthropic", "bedrock-chat", "bedrock-mantle-chat", "vertex", "vertex-express", "vertex-anthropic"}
+        assert set(hosted) == {"azure", "azure-chat", "azure-anthropic", "aws-anthropic", "bedrock-anthropic", "bedrock-chat", "bedrock-mantle-chat", "bedrock-responses", "bedrock-mantle-responses", "vertex", "vertex-express", "vertex-anthropic"}
         for entry in hosted.values():
             assert entry.access.host is not None
             assert entry.access.provider == entry.id
 
     def test_sigv4_policies_name_their_service(self):
-        for pid in ("aws-anthropic", "bedrock-anthropic", "bedrock-chat", "bedrock-mantle-chat"):
+        for pid in ("aws-anthropic", "bedrock-anthropic", "bedrock-chat", "bedrock-mantle-chat", "bedrock-responses", "bedrock-mantle-responses"):
             policy = PROVIDERS[pid].access
             assert "sigv4" in policy.auth_scheme and policy.host.sigv4_service
 
     def test_settings_have_no_silent_region_default(self):
-        for pid in ("aws-anthropic", "bedrock-anthropic", "bedrock-chat", "bedrock-mantle-chat"):
+        for pid in ("aws-anthropic", "bedrock-anthropic", "bedrock-chat", "bedrock-mantle-chat", "bedrock-responses", "bedrock-mantle-responses"):
             region = next(s for s in PROVIDERS[pid].access.host.settings if s.name == "region")
             assert region.default is None
 

@@ -522,6 +522,43 @@ BEDROCK_MANTLE_CHAT = AccessPolicy(
     ),
 )
 
+# Responses doors are separate bindings of the existing Responses dialect.
+# Companion draft: changes/2026-10-05-bedrock-responses-bindings.md (pin pending).
+# IDs (including geographic/global profiles) stay in the body verbatim;
+# region selects the source host and signature, not the profile's scope.
+# Listing is unverified on these roots; no auxiliary surface is advertised.
+BEDROCK_RESPONSES = AccessPolicy(
+    provider="bedrock-responses",
+    supports=EndpointSupport(complete=True, stream=True, responses_api=True),
+    credential_policy="aws-chain",
+    auth_modes=("sigv4", "bearer"),
+    env_keys=("AWS_BEARER_TOKEN_BEDROCK",),
+    auth_scheme=("sigv4", "bearer"),
+    backend="bedrock-runtime",
+    host=HostSpec(
+        base_url="https://bedrock-runtime.{region}.amazonaws.com/openai/v1",
+        settings=(_AWS_REGION,),
+        sigv4_service="bedrock",
+        endpoint_env=_AWS_ENDPOINT,
+    ),
+)
+
+BEDROCK_MANTLE_RESPONSES = AccessPolicy(
+    provider="bedrock-mantle-responses",
+    supports=EndpointSupport(complete=True, stream=True, responses_api=True),
+    credential_policy="aws-chain",
+    auth_modes=("sigv4", "bearer"),
+    env_keys=("AWS_BEARER_TOKEN_BEDROCK",),
+    auth_scheme=("sigv4", "bearer"),
+    backend="bedrock-mantle",
+    host=HostSpec(
+        base_url="https://bedrock-mantle.{region}.api.aws/openai/v1",
+        settings=(_AWS_REGION,),
+        sigv4_service="bedrock-mantle",
+        endpoint_env=_AWS_MANTLE_ENDPOINT,
+    ),
+)
+
 # Azure OpenAI v1: {resource}.openai.azure.com/openai/v1, no api-version,
 # api-key header or an Entra bearer token; the model is the DEPLOYMENT name
 # (azure-openai-api-lifecycle.md:59-106, :235-250;
@@ -658,6 +695,7 @@ VERTEX_ANTHROPIC = AccessPolicy(
 CLOUD_HOST_POLICIES: tuple[AccessPolicy, ...] = (
     AZURE, AZURE_CHAT, AZURE_ANTHROPIC,
     AWS_ANTHROPIC, BEDROCK_ANTHROPIC, BEDROCK_CHAT, BEDROCK_MANTLE_CHAT,
+    BEDROCK_RESPONSES, BEDROCK_MANTLE_RESPONSES,
     VERTEX, VERTEX_EXPRESS, VERTEX_ANTHROPIC,
 )
 

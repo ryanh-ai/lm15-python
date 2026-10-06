@@ -37,6 +37,7 @@ _SERVICE_LABELS = {
     "openai-codex": "OpenAI", "gemini": "Google", "vertex": "Google Cloud", "vertex-anthropic": "Google Cloud",
     "vertex-express": "Google Cloud", "azure": "Microsoft Azure", "azure-chat": "Microsoft Azure",
     "azure-anthropic": "Microsoft Azure", "aws-anthropic": "AWS", "bedrock-anthropic": "AWS",
+    "bedrock-responses": "AWS", "bedrock-mantle-responses": "AWS",
     "bedrock-chat": "AWS", "bedrock-mantle-chat": "AWS", "meta": "Meta", "meta-chat": "Meta",
     "meta-anthropic": "Meta", "moonshotai": "Moonshot AI", "moonshotai-anthropic": "Moonshot AI",
     "moonshotai-responses": "Moonshot AI", "kimi-code": "Moonshot AI", "deepseek": "DeepSeek",
