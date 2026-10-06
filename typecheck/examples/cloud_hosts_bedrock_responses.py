@@ -1,4 +1,3 @@
-"""Cloud-hosts documentation: built-in sync/async Responses registrations."""
 from lm15 import AsyncLMRouter, Config, LMRouter, Message, Reasoning, Request, RouterConfig
 
 cfg = RouterConfig(credentials={"bedrock-mantle-responses": "cli"})

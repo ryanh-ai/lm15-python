@@ -54,8 +54,8 @@ connection setup does.
 | `bedrock-anthropic:anthropic.<model>` | Anthropic Messages (Bedrock, Opus 4.7+) | `AWS_REGION` | `AWS_BEARER_TOKEN_BEDROCK` or the AWS chain (SigV4) |
 | `bedrock-chat:<model id>` | OpenAI Chat Completions (Bedrock runtime; versioned ids) | `AWS_REGION` | same |
 | `bedrock-mantle-chat:<model id>` | OpenAI Chat Completions (Bedrock mantle; un-versioned ids; `list_models()` works) | `AWS_REGION` | same |
-| `bedrock-responses:<profile id>` | OpenAI Responses (Bedrock runtime, `/openai/v1`) | explicit AWS source region | AWS chain (SigV4); bearer serialization only, not live-verified on this root |
-| `bedrock-mantle-responses:<model id>` | OpenAI Responses (Bedrock mantle, `/openai/v1`) | explicit AWS source region | AWS chain (SigV4); bearer serialization only, not live-verified on this root |
+| `bedrock-responses:<profile id>` | OpenAI Responses (Bedrock runtime, `/openai/v1`) | `AWS_REGION` | AWS chain (SigV4); bearer serialization only, not live-verified on this root |
+| `bedrock-mantle-responses:<model id>` | OpenAI Responses (Bedrock mantle, `/openai/v1`) | `AWS_REGION` | AWS chain (SigV4); bearer serialization only, not live-verified on this root |
 | `vertex:<model>` | Gemini | a project: `GOOGLE_CLOUD_PROJECT`, else gcloud's, the credential file's or the metadata server's (`GOOGLE_CLOUD_LOCATION`, default `global`) | the Google chain, or an explicit Vertex API key |
 | `vertex-anthropic:<model>` | Anthropic Messages (rawPredict) | same | the Google chain (Claude on Vertex takes no API keys) |
 | `vertex-express:<model>` | Gemini | nothing | `GOOGLE_API_KEY` |
@@ -70,9 +70,10 @@ the endpoint variable that makes `resource` unnecessary).
 
 ## Bedrock Responses: pick the door explicitly
 
-The two Responses registrations bind `OpenAILM` / `AsyncOpenAILM`; they do
-not implement another AWS SDK or guess a host from the model. Normal AWS
-profile/region configuration and `provider:model` are sufficient:
+Status: documentation-evidenced (`changes/2026-10-05-bedrock-responses-bindings.md`);
+live status follows that change entry.
+
+Normal AWS profile/region configuration and `provider:model` are sufficient:
 
 ```bash
 AWS_PROFILE=your-profile AWS_REGION=us-west-2 python example.py
@@ -104,55 +105,42 @@ service `bedrock-mantle`. Both reuse the AWS chain, named identities and
 endpoint overrides above; neither chooses a default AWS region or falls
 back to the other door or OpenAI.
 
-### Evidence and model/profile eligibility
+### Model/profile eligibility
 
-The following model IDs and roots are documented by AWS. Companion
-request/response/SSE evidence is prepared locally but is not yet published
-or pinned; this draft is not a completed contract-compliance claim.
-Grok receipts are withheld pending publication clearance. Its IDs are used
-here only for documented eligibility and opaque serialization, not a new
-receipted-support claim.
+[AWS model cards](https://docs.aws.amazon.com/bedrock/latest/userguide/models-at-a-glance.html)
+document `us.openai.gpt-6-astra` and `us.xai.grok-4.6` on Runtime Responses;
+Mantle uses un-prefixed IDs such as `openai.gpt-6-astra` and
+`google.gemma-4-31b`. These Mantle models use `/openai/v1`; AWS's
+[Responses guide](https://docs.aws.amazon.com/bedrock/latest/userguide/inference-responses-api.html)
+also lists a `/v1` root for other models, such as GPT OSS. That root needs
+a caller-declared Responses policy with a `/v1` host; `base_urls` replaces
+the host but preserves this registration's `/openai/v1` door path. The
+registration never guesses from the model.
 
-| Door | AWS-documented model/profile examples |
-| --- | --- |
-| Runtime Responses | `us.openai.gpt-6-astra`, `us.xai.grok-4.6` |
-| Mantle Responses | `google.gemma-4-31b`, `openai.gpt-6-astra`, `xai.grok-4.6` |
-
-The [GPT-6 Astra](https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-openai-gpt-6-astra.html)
+The [Astra](https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-openai-gpt-6-astra.html)
 and [Grok 4.6](https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-xai-grok-4-6.html)
-model cards document `us.` and `global.` profiles. Those inference profiles
-are a **Runtime** concept; Mantle uses the un-prefixed model IDs shown in its
-model cards. Tests of profile-style IDs or ARNs on Mantle exercise opaque
-serialization only, not Mantle profile routing or availability. The global
-Runtime routes remain
-**documentation-only, not live-tested here**. Do not fabricate `eu.` or
-other profiles for these models. Serialization tests pass arbitrary
-`global.`, `us.`, `eu.`, `au.`, `jp.`, other prefixes and profile ARNs
-unchanged; that proves opaque transport, not availability. Application
-inference-profile ARN serialization is likewise not a support claim:
-[AWS Runtime Responses guidance](https://docs.aws.amazon.com/bedrock/latest/userguide/inference-responses-api.html)
-states that application inference profiles are not supported. A model's
-supported native runtime APIs do not imply Responses compatibility (for
-example, Claude's geographic profiles).
+cards document `us.` and `global.` Runtime profiles. Global routes are
+documentation-only here. Prefix/ARN pass-through tests establish serialization,
+not availability: do not manufacture `eu.` or other profiles for those models,
+or infer Claude Responses compatibility from its native runtime APIs.
+Application inference profiles are not supported by Runtime Responses.
 
-Global/geographic routing scope belongs to the **model ID**, not a new
-global hostname. Keep the source-region host/signature regional. Never
-replace a geographic ID with `global.` automatically: global inference
-can cross data-residency boundaries. Select an eligible model/API/source
-region using the [AWS model cards and cross-Region guide](https://docs.aws.amazon.com/bedrock/latest/userguide/cross-region-inference.html).
+Scope belongs to the model ID, not a global hostname; the source-region
+host/signature stays regional. Never substitute `global.` for a geographic
+ID: it can cross residency boundaries. Choose an eligible API/source region
+using the [AWS cross-Region guide](https://docs.aws.amazon.com/bedrock/latest/userguide/cross-region-inference.html).
 
-This binding targets basic completion/streaming. Tools, multimodal input,
-structured output, state/background operations and bearer authentication on
-these roots are not live-verified claims in this draft. No model listing or
-auxiliary endpoint is advertised. `store=False` disables conversation storage;
-AWS/model-provider abuse monitoring may still retain inputs/outputs under
-their service terms. Select reasoning and output budgets using each model's
-API documentation; those settings are not a binding change.
+Only basic completion/streaming is covered; tools, media, structured output,
+state/background operations and bearer authentication on these roots remain
+unverified. No model listing or auxiliary endpoint is advertised.
+`store=False` disables conversation storage. For certain models,
+[AWS Service Terms 50.12.2](https://aws.amazon.com/service-terms/) allow AWS
+abuse detection to store inputs/outputs for up to 30 days (longer when
+required by law), even with `store=False`.
 
-Existing `bedrock-chat`, `bedrock-mantle-chat` on `/v1`, and
-`bedrock-anthropic` are unchanged. Mantle `/openai/v1` Chat needs a separately
-agreed public name (PR 2). Native Converse and the separate
-`response.incomplete` fix are not part of these registrations.
+Existing `bedrock-chat`, `bedrock-mantle-chat` (`/v1`) and
+`bedrock-anthropic` are unchanged. These doors speak Responses, not native
+Converse.
 
 ## Day one: the laptop
 

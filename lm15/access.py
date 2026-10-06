@@ -522,11 +522,13 @@ BEDROCK_MANTLE_CHAT = AccessPolicy(
     ),
 )
 
-# Responses doors are separate bindings of the existing Responses dialect.
-# Companion draft: changes/2026-10-05-bedrock-responses-bindings.md (pin pending).
-# IDs (including geographic/global profiles) stay in the body verbatim;
-# region selects the source host and signature, not the profile's scope.
-# Listing is unverified on these roots; no auxiliary surface is advertised.
+# Bedrock Responses on bedrock-runtime: BEDROCK_CHAT's /openai/v1 root
+# and signing, with the Responses dialect (responses-api.txt:29-33, :199-205;
+# changes/2026-10-05-bedrock-responses-bindings.md).  Model/profile ids stay
+# in the body verbatim; region picks the source host and signature, not
+# the profile's scope.  models=False: AWS says this door has no GET
+# /openai/v1/models (responses-api.txt:210-217), as BEDROCK_CHAT's live 404
+# on the same root already showed.
 BEDROCK_RESPONSES = AccessPolicy(
     provider="bedrock-responses",
     supports=EndpointSupport(complete=True, stream=True, responses_api=True),
@@ -543,6 +545,12 @@ BEDROCK_RESPONSES = AccessPolicy(
     ),
 )
 
+# Bedrock Responses on bedrock-mantle: /openai/v1, not the /v1 root of
+# BEDROCK_MANTLE_CHAT.  These models are served at /openai/v1/responses,
+# "not the default /v1/responses" (gemma-4-31b.txt:64-70,
+# gpt-6-astra.txt:84-96; changes/2026-10-05-bedrock-responses-bindings.md).
+# Listing on this root is unmeasured: models=False.  Other Mantle models
+# may use /v1; this door does not guess the root from the model id.
 BEDROCK_MANTLE_RESPONSES = AccessPolicy(
     provider="bedrock-mantle-responses",
     supports=EndpointSupport(complete=True, stream=True, responses_api=True),

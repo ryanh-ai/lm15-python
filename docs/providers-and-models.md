@@ -50,19 +50,13 @@ detail: the list of providers, the shortcuts, and the metadata.
 | Together AI | `together` | `TOGETHER_API_KEY` | — (see note) |
 | Fireworks AI | `fireworks` | `FIREWORKS_API_KEY` | — (see note) |
 | Parasail | `parasail` | `PARASAIL_API_KEY` | — (see note) |
-| Amazon Bedrock Runtime, Responses wire | `bedrock-responses` | AWS profile/chain (SigV4) or `AWS_BEARER_TOKEN_BEDROCK` (serialization only, not live-verified); explicit region | basic completion/stream ([evidence and eligibility](cloud-hosts.md#bedrock-responses-pick-the-door-explicitly)) |
-| Amazon Bedrock Mantle, Responses wire | `bedrock-mantle-responses` | same authentication evidence limits; explicit region | basic completion/stream (no model-listing claim) |
 | ollama (local) | `ollama` | none | — |
 | vLLM (local) | `vllm` | none | — |
 | SGLang (local) | `sglang` | none | — |
 | Claude subscription | `claude-code` | your `claude` CLI login | — |
 | ChatGPT subscription | `openai-codex` | your `codex` CLI login | — |
 
-The Bedrock Responses rows are draft bindings for basic completion/streaming;
-their companion evidence/pin is pending, as described in
-[Cloud hosts](cloud-hosts.md#bedrock-responses-pick-the-door-explicitly).
-Advanced model capabilities are not claimed by this draft.
-Other providers do chat with streaming and tools — that column would
+Every provider does chat with streaming and tools — that column would
 be all checkmarks, so the table only lists what each offers *beyond*
 it. Setting the key is one `export`; every other way to authenticate
 is on [Authentication](authentication.md).

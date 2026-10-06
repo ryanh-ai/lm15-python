@@ -1,8 +1,8 @@
-"""PR 1: existing Responses dialect bound to two explicit AWS doors.
+"""Bedrock Responses doors (changes/2026-10-05-bedrock-responses-bindings.md):
+the existing Responses dialect behind two explicit AWS hosts.
 
 Profile prefix/ARN vectors are serialization tests, NOT model eligibility.
-Live bodies come from the pinned companion contract; LM15_CONTRACT_DIR is a
-local-development override while that companion commit awaits landing.
+Live bodies come from the pinned contract; LM15_CONTRACT_DIR overrides it.
 """
 from __future__ import annotations
 
@@ -216,7 +216,6 @@ def test_gemma_before_and_after_router_ux_same_wire_with_profile(monkeypatch, tm
     env = {"AWS_PROFILE": "fixture-profile", "AWS_REGION": "us-west-2", "AWS_SHARED_CREDENTIALS_FILE": str(credentials),
            "AWS_CONFIG_FILE": str(tmp_path / "absent-config")}
     # In the post-registration checkout a declaration must use a distinct ID.
-    # Exact pre-registration issue snippets are also validated at the base SHA.
     legacy = "legacy-mantle-responses"
     before = ProviderDefinition.responses(
         replace(access.BEDROCK_MANTLE_CHAT, provider=legacy,

@@ -550,12 +550,12 @@ _DEFINITIONS: tuple[ProviderDefinition, ...] = (
     _hosted(
         _access.BEDROCK_RESPONSES, "openai-responses", OpenAILM, AsyncOpenAILM, compat="openai",
         console_url="https://console.aws.amazon.com/bedrock/",
-        note="Amazon Bedrock Responses on bedrock-runtime /openai/v1; opaque inference-profile IDs; source-region SigV4 service bedrock; no model listing",
+        note="Amazon Bedrock over the OpenAI Responses wire (bedrock-runtime /openai/v1; inference-profile ids verbatim, no model listing; SigV4 or AWS_BEARER_TOKEN_BEDROCK; needs AWS_REGION)",
     ),
     _hosted(
         _access.BEDROCK_MANTLE_RESPONSES, "openai-responses", OpenAILM, AsyncOpenAILM, compat="openai",
         console_url="https://console.aws.amazon.com/bedrock/",
-        note="Amazon Bedrock Responses on bedrock-mantle /openai/v1; SigV4 service bedrock-mantle; basic completion/streaming only; no model listing",
+        note="Amazon Bedrock over the OpenAI Responses wire (bedrock-mantle /openai/v1, not /v1; no model listing; SigV4 or AWS_BEARER_TOKEN_BEDROCK; needs AWS_REGION)",
     ),
     _hosted(
         _access.VERTEX, "gemini", GeminiLM, AsyncGeminiLM,
