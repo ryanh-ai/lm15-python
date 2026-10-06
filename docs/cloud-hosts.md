@@ -52,9 +52,9 @@ connection setup does.
 | `azure-anthropic:<model>` | Anthropic Messages (Foundry) | `ANTHROPIC_FOUNDRY_RESOURCE`, or the endpoint `ANTHROPIC_FOUNDRY_BASE_URL` | `ANTHROPIC_FOUNDRY_API_KEY` or the Azure chain |
 | `aws-anthropic:<model>` | Anthropic Messages (Claude Platform on AWS) | `AWS_REGION`, `ANTHROPIC_AWS_WORKSPACE_ID` | `ANTHROPIC_AWS_API_KEY` or the AWS chain (SigV4) |
 | `bedrock-anthropic:anthropic.<model>` | Anthropic Messages (Bedrock, Opus 4.7+) | `AWS_REGION` | `AWS_BEARER_TOKEN_BEDROCK` or the AWS chain (SigV4) |
-| `bedrock-chat:<model id>` | OpenAI Chat Completions (Bedrock runtime; versioned ids) | `AWS_REGION` | same |
+| `bedrock-chat:<model profile id>` | OpenAI Chat Completions (Bedrock runtime; versioned ids) | `AWS_REGION` | same |
 | `bedrock-mantle-chat:<model id>` | OpenAI Chat Completions (Bedrock mantle; un-versioned ids; `list_models()` works) | `AWS_REGION` | same |
-| `bedrock-responses:<profile id>` | OpenAI Responses (Bedrock runtime, `/openai/v1`) | `AWS_REGION` | AWS chain (SigV4); bearer serialization only, not live-verified on this root |
+| `bedrock-responses:<model profile id>` | OpenAI Responses (Bedrock runtime, `/openai/v1`) | `AWS_REGION` | AWS chain (SigV4); bearer serialization only, not live-verified on this root |
 | `bedrock-mantle-responses:<model id>` | OpenAI Responses (Bedrock mantle, `/openai/v1`) | `AWS_REGION` | AWS chain (SigV4); bearer serialization only, not live-verified on this root |
 | `vertex:<model>` | Gemini | a project: `GOOGLE_CLOUD_PROJECT`, else gcloud's, the credential file's or the metadata server's (`GOOGLE_CLOUD_LOCATION`, default `global`) | the Google chain, or an explicit Vertex API key |
 | `vertex-anthropic:<model>` | Anthropic Messages (rawPredict) | same | the Google chain (Claude on Vertex takes no API keys) |
@@ -68,11 +68,15 @@ and `resource` have no default: a wrong-region default is a residency bug,
 so lm15 raises `NotConfiguredError` naming the variable (and, on Azure,
 the endpoint variable that makes `resource` unnecessary).
 
-## Bedrock Responses: pick the door explicitly
+## Bedrock Responses
 
 Status: documentation-evidenced (`changes/2026-10-05-bedrock-responses-bindings.md`);
 live status follows that change entry.
 
+Use `bedrock-responses` for Runtime or `bedrock-mantle-responses` for Mantle.
+The provider prefix selects the endpoint, rather than guessing from the model.
+For Runtime, `model profile id` means the model or supported inference-profile
+identifier sent unchanged to AWS. Mantle uses its un-prefixed model IDs.
 Normal AWS profile/region configuration and `provider:model` are sufficient:
 
 ```bash
