@@ -548,6 +548,16 @@ _DEFINITIONS: tuple[ProviderDefinition, ...] = (
         note="Amazon Bedrock Chat Completions on bedrock-mantle (un-versioned ids, GET /v1/models; SigV4 or AWS_BEARER_TOKEN_BEDROCK)",
     ),
     _hosted(
+        _access.BEDROCK_RESPONSES, "openai-responses", OpenAILM, AsyncOpenAILM, compat="openai",
+        console_url="https://console.aws.amazon.com/bedrock/",
+        note="Amazon Bedrock over the OpenAI Responses wire (bedrock-runtime /openai/v1; inference-profile ids verbatim, no model listing; SigV4 or AWS_BEARER_TOKEN_BEDROCK; needs AWS_REGION)",
+    ),
+    _hosted(
+        _access.BEDROCK_MANTLE_RESPONSES, "openai-responses", OpenAILM, AsyncOpenAILM, compat="openai",
+        console_url="https://console.aws.amazon.com/bedrock/",
+        note="Amazon Bedrock over the OpenAI Responses wire (bedrock-mantle /openai/v1, not /v1; no model listing; SigV4 or AWS_BEARER_TOKEN_BEDROCK; needs AWS_REGION)",
+    ),
+    _hosted(
         _access.VERTEX, "gemini", GeminiLM, AsyncGeminiLM,
         console_url="https://console.cloud.google.com/vertex-ai",
         note="Gemini on Google Cloud (Agent Platform); ADC chain; needs GOOGLE_CLOUD_PROJECT, GOOGLE_CLOUD_LOCATION defaults to global",
